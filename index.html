@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>오늘의 할 일</title>
+  <script>
+    try {
+      const theme = localStorage.getItem('simple-todo-theme');
+      document.documentElement.dataset.theme = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    } catch { document.documentElement.dataset.theme = 'light'; }
+  </script>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; color: #24382e; background: #f5f6f2; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 64px 20px; }
+    main { max-width: 600px; margin: auto; }
+    .eyebrow { color: #65816e; font-size: 12px; font-weight: 700; letter-spacing: 3px; }
+    h1 { font-size: 36px; letter-spacing: -1.5px; margin: 14px 0 10px; }
+    .intro { color: #778078; line-height: 1.7; margin-bottom: 30px; }
+    .card { background: #fff; border: 1px solid #e2e7de; border-radius: 22px; padding: 26px; box-shadow: 0 12px 40px #23372a07; }
+    form { display: flex; gap: 10px; }
+    input[type=text] { flex: 1; min-width: 0; border: 1px solid #dce3d8; border-radius: 12px; padding: 15px; font: inherit; background: #fafbf9; }
+    button { cursor: pointer; font: inherit; border: 0; border-radius: 10px; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #8cb49a; outline-offset: 3px; }
+    .add { background: #345b43; color: white; padding: 0 20px; font-weight: 600; }
+    .add:hover { background: #254631; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 25px 0 16px; border-bottom: 1px solid #edf0e9; flex-wrap: wrap; }
+    .filters { display: flex; gap: 4px; }
+    .filter { background: transparent; color: #7a837b; padding: 8px 12px; font-size: 13px; }
+    .filter[aria-pressed=true] { background: #edf3eb; color: #345b43; font-weight: 700; }
+    .count { font-size: 12px; color: #7a837b; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { display: flex; gap: 12px; align-items: center; padding: 18px 0; border-bottom: 1px solid #edf0e9; }
+    li label { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; line-height: 1.6; }
+    li input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #42694e; cursor: pointer; }
+    li span { overflow-wrap: anywhere; }
+    li.done span { text-decoration: line-through; color: #98a198; }
+    .delete { background: transparent; color: #919a92; font-size: 12px; padding: 8px; flex-shrink: 0; }
+    .delete:hover { background: #fff1ed; color: #a34a38; }
+    .empty { text-align: center; padding: 46px 10px; color: #899287; font-size: 14px; line-height: 1.8; }
+    .empty-icon { display: block; font-size: 28px; color: #7e9a79; margin-bottom: 10px; }
+    .bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 19px; gap: 10px; font-size: 12px; color: #899287; }
+    .clear { background: transparent; color: #6f7e70; font-size: 12px; padding: 7px 0; }
+    .clear:disabled { opacity: .4; cursor: default; }
+    footer { text-align: center; font-size: 12px; color: #939b90; margin-top: 25px; line-height: 1.7; }
+    #notice { color: #a34a38; font-size: 13px; line-height: 1.6; }
+    .header-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .theme-toggle { background: #e7ede3; color: #345b43; padding: 9px 12px; font-size: 12px; }
+    .star { flex-shrink: 0; background: transparent; color: #818981; font-size: 26px; line-height: 1; padding: 6px; }
+    .star[aria-pressed=true] { color: #ffd43b; text-shadow: 0 1px 2px #73560066; }
+    :root[data-theme=dark] { color-scheme: dark; color: #e4ece5; background: #161d19; }
+    [data-theme=dark] .card { background: #202a23; border-color: #3c4b40; }
+    [data-theme=dark] input[type=text] { color: #e4ece5; background: #18221c; border-color: #4a5c4f; }
+    [data-theme=dark] input[type=text]::placeholder { color: #a6b3a8; }
+    [data-theme=dark] .toolbar, [data-theme=dark] li { border-color: #37453b; }
+    [data-theme=dark] .intro, [data-theme=dark] .count, [data-theme=dark] .filter,
+    [data-theme=dark] .empty, [data-theme=dark] .bottom, [data-theme=dark] footer,
+    [data-theme=dark] .clear, [data-theme=dark] .delete { color: #b0bdb1; }
+    [data-theme=dark] .eyebrow, [data-theme=dark] .empty-icon { color: #a1c196; }
+    [data-theme=dark] .filter[aria-pressed=true], [data-theme=dark] .theme-toggle { background: #354d3d; color: #dfefdb; }
+    [data-theme=dark] .add { background: #92bd98; color: #142a1b; }
+    [data-theme=dark] .add:hover { background: #aad2ae; }
+    [data-theme=dark] li input { accent-color: #92bd98; }
+    [data-theme=dark] .delete:hover { background: #4a302b; color: #ffc0ad; }
+    [data-theme=dark] #notice { color: #ffc0ad; }
+    @media (max-width: 480px) { body { padding: 36px 16px; } .card { padding: 20px; } h1 { font-size: 30px; } .add { padding: 0 16px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="header-top">
+        <div class="eyebrow">ONE THING AT A TIME</div>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="다크 모드" aria-pressed="false">다크 모드</button>
+      </div>
+      <h1>오늘의 할 일<span style="color:#7f9b71">.</span></h1>
+      <p class="intro">작은 일부터 하나씩, 가벼운 하루를 만들어 보세요.</p>
+    </header>
+    <section class="card" aria-label="할 일 관리">
+      <form id="form">
+        <input id="task" type="text" aria-label="새 할 일" placeholder="어떤 일을 해야 하나요?" maxlength="300" autocomplete="off" required>
+        <button class="add" type="submit">추가</button>
+      </form>
+      <div class="toolbar">
+        <div class="filters" role="group" aria-label="할 일 필터">
+          <button class="filter" data-filter="all" aria-pressed="true">전체</button>
+          <button class="filter" data-filter="active" aria-pressed="false">진행 중</button>
+          <button class="filter" data-filter="done" aria-pressed="false">완료</button>
+        </div>
+        <span id="count" class="count" aria-live="polite"></span>
+      </div>
+      <ul id="list" aria-label="할 일 목록"></ul>
+      <div id="empty" class="empty"><span class="empty-icon" aria-hidden="true">✓</span><span id="empty-text"></span></div>
+      <div class="bottom"><span id="progress"></span><button id="clear" class="clear">완료한 일 지우기</button></div>
+      <p id="notice" role="status" hidden></p>
+    </section>
+    <footer>목록은 이 브라우저에 자동으로 저장됩니다.</footer>
+  </main>
+  <script>
+    const storageKey = 'simple-todo-v1';
+    let tasks = [];
+    let filter = 'all';
+    const input = document.getElementById('task');
+    const list = document.getElementById('list');
+    const notice = document.getElementById('notice');
+    function warn(message) { notice.textContent = message; notice.hidden = false; }
+    const themeToggle = document.getElementById('theme-toggle');
+    function renderTheme() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      themeToggle.setAttribute('aria-pressed', String(dark));
+      themeToggle.textContent = dark ? '☀ 라이트 모드' : '☾ 다크 모드';
+    }
+    themeToggle.addEventListener('click', () => {
+      const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = theme;
+      try { localStorage.setItem('simple-todo-theme', theme); }
+      catch { warn('테마 설정을 저장하지 못했습니다. 현재 창에서는 적용됩니다.'); }
+      renderTheme();
+    });
+    renderTheme();
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (!Array.isArray(saved) || !saved.every(t => t && typeof t.id === 'string' && typeof t.text === 'string' && typeof t.done === 'boolean')) throw new Error('Invalid data');
+      tasks = saved.map(task => ({ ...task, important: task.important === true }));
+    } catch { warn('저장된 목록을 불러오지 못했습니다. 브라우저의 저장 설정을 확인해 주세요.'); }
+    function save() {
+      try { localStorage.setItem(storageKey, JSON.stringify(tasks)); notice.hidden = true; }
+      catch { warn('자동 저장이 되지 않았습니다. 이 창을 닫으면 변경 내용이 사라질 수 있습니다.'); }
+    }
+    function render() {
+      list.replaceChildren();
+      const visible = tasks.filter(t => filter === 'all' || (filter === 'done' ? t.done : !t.done));
+      visible.forEach(task => {
+        const row = document.createElement('li');
+        row.classList.toggle('done', task.done);
+        const label = document.createElement('label');
+        const check = document.createElement('input');
+        check.type = 'checkbox'; check.checked = task.done;
+        check.addEventListener('change', () => { task.done = check.checked; save(); render(); });
+        const text = document.createElement('span'); text.textContent = task.text;
+        label.append(check, text);
+        const star = document.createElement('button');
+        star.className = 'star'; star.type = 'button';
+        star.setAttribute('aria-label', task.text + ' 중요 표시');
+        function renderStar() {
+          star.textContent = task.important ? '★' : '☆';
+          star.setAttribute('aria-pressed', String(task.important));
+          star.title = task.important ? '중요 표시 해제' : '중요 표시';
+        }
+        renderStar();
+        star.addEventListener('click', () => { task.important = !task.important; save(); renderStar(); });
+        const remove = document.createElement('button');
+        remove.className = 'delete'; remove.textContent = '삭제';
+        remove.setAttribute('aria-label', task.text + ' 삭제');
+        remove.addEventListener('click', () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); });
+        row.append(label, star, remove); list.append(row);
+      });
+      const completed = tasks.filter(t => t.done).length;
+      document.getElementById('count').textContent = `${tasks.length - completed}개 남음`;
+      document.getElementById('progress').textContent = `${tasks.length}개 중 ${completed}개 완료`;
+      document.getElementById('clear').disabled = completed === 0;
+      document.getElementById('empty').hidden = visible.length !== 0;
+      document.getElementById('empty-text').textContent = filter === 'done' ? '아직 완료한 일이 없어요.' : filter === 'active' && tasks.length ? '모든 일을 마쳤어요. 수고했어요!' : '목록이 비어 있어요. 첫 할 일을 추가해 보세요.';
+      document.querySelectorAll('.filter').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
+    }
+    document.getElementById('form').addEventListener('submit', event => {
+      event.preventDefault();
+      const text = input.value.trim();
+      if (!text) { input.value = ''; input.focus(); return; }
+      tasks.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2), text, done: false, important: false });
+      input.value = ''; filter = 'all'; save(); render(); input.focus();
+    });
+    document.querySelectorAll('.filter').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
+    document.getElementById('clear').addEventListener('click', () => { tasks = tasks.filter(t => !t.done); save(); render(); });
+    render();
+  </script>
+</body>
+</html>
