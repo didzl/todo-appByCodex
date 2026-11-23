@@ -1,3 +1,66 @@
+# Today’s Tasks
+
+A simple to-do app for writing down daily tasks and checking them off when finished. It runs in a web browser such as Chrome or Edge. No account or separate app installation is required.
+
+## Open the app
+
+1. Open the folder where you saved this project.
+2. Double-click `index.html`.
+3. When the **오늘의 할 일** (Today’s Tasks) screen appears in your browser, the app is ready to use.
+
+If the file opens in another program instead of a browser, right-click `index.html` and choose **Open with → Chrome or Microsoft Edge**. `README.md` is the guide you are reading; the app itself is `index.html`.
+
+## Add your first task
+
+1. Enter a task, such as `Buy milk`, in the **무엇을 해볼까요?** (What would you like to do?) field.
+2. If the task has a due date, choose one under **마감일(선택)** (Due date, optional). You can leave it blank.
+3. Click **추가** (Add) or press Enter.
+4. When you finish a task, click its checkbox. Click it again to mark the task as in progress.
+
+## Features
+
+- **Search:** Type in **할 일 검색** (Search tasks) to show tasks containing that text. Clear the query to see the selected filter’s list again. If there are no results, try changing the query or filter.
+- **Filter by status:** Choose **전체** (All), **진행 중** (In progress), or **완료** (Completed). You can combine a status filter with search.
+- **Mark important tasks:** Click a task’s star (☆) to mark it as important. Click it again to remove the mark.
+- **Manage due dates:** Change a task’s due date after adding it, or click **지우기** (Clear) beside the date to remove it. Unfinished tasks past their due date are marked **기한 지남** (Overdue).
+- **Reorder tasks:** Drag the ⠿ handle on the left of a task. With a keyboard, press Tab until the handle is focused, then press ↑ or ↓.
+- **Delete tasks:** Click **삭제** (Delete) on a task to remove it, or use **완료한 일 지우기** (Clear completed tasks) near the bottom to remove all completed tasks. Deletion cannot be undone.
+- **Choose a theme:** Use the **다크 모드** (Dark mode) or **라이트 모드** (Light mode) button near the top to change the screen brightness.
+
+## Where is my list stored?
+
+Tasks, their order, and the theme are saved automatically in the browser you use. There is no separate save button. To see your list again, open the app in the same browser using the same file or address.
+
+Your list does not automatically sync to other browsers or devices. Clearing your browser’s site data may also remove the saved list. Data in a private or incognito window may not persist after you close the window, so using a regular browser window is recommended.
+
+If you see a message that the app could not save, check your browser’s storage settings. Changes may be lost when you close the window while saving is unavailable.
+
+## Optional: Open the app with a local server
+
+You can get started by opening the file as described above. If Python is already installed and you prefer to use the same address each time, you can use these steps instead:
+
+1. Open a terminal or PowerShell in the project folder. On Windows, you can right-click an empty area in the folder and choose **Open in Terminal**.
+2. Enter the following command and press Enter:
+
+   ```powershell
+   python -m http.server 8000
+   ```
+
+3. Leave the terminal open and visit `http://localhost:8000` in your browser.
+4. When you are finished, press Ctrl+C in the terminal to stop the server.
+
+If you see a message that the `python` command cannot be found, use the **Open the app** method above. Opening the file directly and using a local server use different storage locations, so your existing list will not move between them automatically.
+
+## Project files
+
+- `index.html`: Contains the app’s interface, design, and behavior
+- `README.md`: App overview and usage instructions
+- `AGENTS.md`: Contribution guide for code changes and commits
+
+No package installation or build step is required.
+
+---
+
 # 오늘의 할 일
 
 매일 해야 할 일을 적고, 끝낸 일을 체크하는 간단한 한국어 할 일 앱입니다. Chrome이나 Edge 같은 웹 브라우저에서 사용할 수 있으며, 회원가입이나 별도 앱 설치가 필요하지 않습니다.
