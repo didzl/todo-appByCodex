@@ -31,7 +31,8 @@
     li.overdue { background: #fff0ec; border-bottom-color: #c35b43; border-left: 3px solid #c35b43; padding-left: 8px; }
     .overdue-badge { display: inline-block; margin-top: 6px; color: #9b301e; font-size: 12px; font-weight: 700; }
     .overdue-badge[hidden] { display: none; }
-    input[type=text] { flex: 1; min-width: 0; border: 1px solid #dce3d8; border-radius: 12px; padding: 15px; font: inherit; background: #fafbf9; }
+    input[type=text], input[type=search] { flex: 1; min-width: 0; border: 1px solid #dce3d8; border-radius: 12px; padding: 15px; font: inherit; background: #fafbf9; }
+    .search-field { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; font-size: 13px; }
     button { cursor: pointer; font: inherit; border: 0; border-radius: 10px; }
     button:focus-visible, input:focus-visible { outline: 3px solid #8cb49a; outline-offset: 3px; }
     .add { background: #345b43; color: white; padding: 0 20px; font-weight: 600; }
@@ -69,8 +70,8 @@
     .star[aria-pressed=true] { color: #ffd43b; text-shadow: 0 1px 2px #73560066; }
     :root[data-theme=dark] { color-scheme: dark; color: #e4ece5; background: #161d19; }
     [data-theme=dark] .card { background: #202a23; border-color: #3c4b40; }
-    [data-theme=dark] input[type=text] { color: #e4ece5; background: #18221c; border-color: #4a5c4f; }
-    [data-theme=dark] input[type=text]::placeholder { color: #a6b3a8; }
+    [data-theme=dark] input[type=text], [data-theme=dark] input[type=search] { color: #e4ece5; background: #18221c; border-color: #4a5c4f; }
+    [data-theme=dark] input[type=text]::placeholder, [data-theme=dark] input[type=search]::placeholder { color: #a6b3a8; }
     [data-theme=dark] .toolbar, [data-theme=dark] li { border-color: #37453b; }
     [data-theme=dark] .intro, [data-theme=dark] .count, [data-theme=dark] .filter,
     [data-theme=dark] .empty, [data-theme=dark] .bottom, [data-theme=dark] footer,
@@ -106,6 +107,10 @@
         <button class="add" type="submit">추가</button>
         <div class="due-field new-due"><label for="due-date">마감일(선택)</label><input id="due-date" type="date" min="0001-01-01" max="9999-12-31"></div>
       </form>
+      <div class="search-field">
+        <label for="search">할 일 검색</label>
+        <input id="search" type="search" placeholder="검색어를 입력하세요" autocomplete="off" aria-controls="list">
+      </div>
       <div class="toolbar">
         <div class="filters" role="group" aria-label="할 일 필터">
           <button class="filter" data-filter="all" aria-pressed="true">전체</button>
@@ -128,6 +133,7 @@
     let filter = 'all';
     let draggedId = null;
     const input = document.getElementById('task');
+    const searchInput = document.getElementById('search');
     const dueInput = document.getElementById('due-date');
     const list = document.getElementById('list');
     const notice = document.getElementById('notice');
@@ -179,7 +185,8 @@
       catch { warn('자동 저장이 되지 않았습니다. 이 창을 닫으면 변경 내용이 사라질 수 있습니다.'); }
     }
     function visibleTasks() {
-      return tasks.filter(t => filter === 'all' || (filter === 'done' ? t.done : !t.done));
+      const query = searchInput.value.trim().toLowerCase();
+      return tasks.filter(t => (filter === 'all' || (filter === 'done' ? t.done : !t.done)) && t.text.toLowerCase().includes(query));
     }
     function clearDrag() {
       draggedId = null;
@@ -290,11 +297,11 @@
         updateOverdue(row, task);
       });
       const completed = tasks.filter(t => t.done).length;
-      document.getElementById('count').textContent = `${tasks.length - completed}개 남음`;
+      document.getElementById('count').textContent = searchInput.value.trim() ? `검색 결과 ${visible.length}개 · ${tasks.length - completed}개 남음` : `${tasks.length - completed}개 남음`;
       document.getElementById('progress').textContent = `${tasks.length}개 중 ${completed}개 완료`;
       document.getElementById('clear').disabled = completed === 0;
       document.getElementById('empty').hidden = visible.length !== 0;
-      document.getElementById('empty-text').textContent = filter === 'done' ? '아직 완료한 일이 없어요.' : filter === 'active' && tasks.length ? '모든 일을 마쳤어요. 수고했어요!' : '목록이 비어 있어요. 첫 할 일을 추가해 보세요.';
+      document.getElementById('empty-text').textContent = searchInput.value.trim() ? '검색 결과가 없어요. 검색어나 필터를 바꿔 보세요.' : filter === 'done' ? '아직 완료한 일이 없어요.' : filter === 'active' && tasks.length ? '모든 일을 마쳤어요. 수고했어요!' : '목록이 비어 있어요. 첫 할 일을 추가해 보세요.';
       document.querySelectorAll('.filter').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
     }
     document.getElementById('form').addEventListener('submit', event => {
@@ -304,6 +311,7 @@
       tasks.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2), text, done: false, important: false, dueDate: normalizeDueDate(dueInput.value) });
       input.value = ''; dueInput.value = ''; filter = 'all'; save(); render(); input.focus();
     });
+    searchInput.addEventListener('input', render);
     document.querySelectorAll('.filter').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
     document.getElementById('clear').addEventListener('click', () => { tasks = tasks.filter(t => !t.done); save(); render(); });
     render();
