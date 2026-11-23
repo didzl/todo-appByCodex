@@ -59,6 +59,8 @@
     .delete:hover { background: #fff1ed; color: #a34a38; }
     .empty { text-align: center; padding: 46px 10px; color: #899287; font-size: 14px; line-height: 1.8; }
     .empty-icon { display: block; font-size: 28px; color: #7e9a79; margin-bottom: 10px; }
+    .empty-illustration { display: block; width: 200px; max-width: 100%; height: auto; margin: 0 auto 16px; }
+    .empty-illustration[hidden], .empty-icon[hidden] { display: none; }
     .bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 19px; gap: 10px; font-size: 12px; color: #899287; }
     .clear { background: transparent; color: #6f7e70; font-size: 12px; padding: 7px 0; }
     .clear:disabled { opacity: .4; cursor: default; }
@@ -121,7 +123,7 @@
       </div>
       <p id="reorder-help" class="reorder-help">⠿을 끌어 순서를 바꾸세요. 키보드에서는 ⠿에 초점을 두고 ↑ ↓ 키를 누르세요.</p>
       <ul id="list" aria-label="할 일 목록"></ul>
-      <div id="empty" class="empty"><span class="empty-icon" aria-hidden="true">✓</span><span id="empty-text"></span></div>
+      <div id="empty" class="empty"><img id="empty-illustration" class="empty-illustration" src="empty-state.png" width="1536" height="1024" alt="" aria-hidden="true"><span id="empty-icon" class="empty-icon" aria-hidden="true">✓</span><span id="empty-text"></span></div>
       <div class="bottom"><span id="progress"></span><button id="clear" class="clear">완료한 일 지우기</button></div>
       <p id="notice" role="status" hidden></p>
     </section>
@@ -301,6 +303,8 @@
       document.getElementById('progress').textContent = `${tasks.length}개 중 ${completed}개 완료`;
       document.getElementById('clear').disabled = completed === 0;
       document.getElementById('empty').hidden = visible.length !== 0;
+      document.getElementById('empty-illustration').hidden = tasks.length !== 0;
+      document.getElementById('empty-icon').hidden = tasks.length === 0;
       document.getElementById('empty-text').textContent = searchInput.value.trim() ? '검색 결과가 없어요. 검색어나 필터를 바꿔 보세요.' : filter === 'done' ? '아직 완료한 일이 없어요.' : filter === 'active' && tasks.length ? '모든 일을 마쳤어요. 수고했어요!' : '목록이 비어 있어요. 첫 할 일을 추가해 보세요.';
       document.querySelectorAll('.filter').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
     }
