@@ -19,7 +19,18 @@
     h1 { font-size: 36px; letter-spacing: -1.5px; margin: 14px 0 10px; }
     .intro { color: #778078; line-height: 1.7; margin-bottom: 30px; }
     .card { background: #fff; border: 1px solid #e2e7de; border-radius: 22px; padding: 26px; box-shadow: 0 12px 40px #23372a07; }
-    form { display: flex; gap: 10px; }
+    form { display: flex; gap: 10px; flex-wrap: wrap; }
+    .new-due { flex-basis: 100%; }
+    .due-field { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: #657467; }
+    input[type=date] { min-width: 0; max-width: 100%; border: 1px solid #dce3d8; border-radius: 8px; padding: 7px; font: inherit; color: inherit; background: #fafbf9; }
+    .task-content { flex: 1; min-width: 0; }
+    .task-content .due-field { margin-top: 8px; }
+    li .due-field label { flex: none; font-size: 12px; }
+    .clear-date { background: transparent; color: inherit; padding: 6px; font-size: 12px; }
+    .clear-date:disabled { display: none; }
+    li.overdue { background: #fff0ec; border-bottom-color: #c35b43; border-left: 3px solid #c35b43; padding-left: 8px; }
+    .overdue-badge { display: inline-block; margin-top: 6px; color: #9b301e; font-size: 12px; font-weight: 700; }
+    .overdue-badge[hidden] { display: none; }
     input[type=text] { flex: 1; min-width: 0; border: 1px solid #dce3d8; border-radius: 12px; padding: 15px; font: inherit; background: #fafbf9; }
     button { cursor: pointer; font: inherit; border: 0; border-radius: 10px; }
     button:focus-visible, input:focus-visible { outline: 3px solid #8cb49a; outline-offset: 3px; }
@@ -32,10 +43,17 @@
     .count { font-size: 12px; color: #7a837b; }
     ul { list-style: none; padding: 0; margin: 0; }
     li { display: flex; gap: 12px; align-items: center; padding: 18px 0; border-bottom: 1px solid #edf0e9; }
+    .drag-handle { flex-shrink: 0; background: transparent; color: #7a837b; cursor: grab; padding: 6px 2px; font-size: 22px; touch-action: auto; }
+    .drag-handle:active { cursor: grabbing; }
+    li.dragging { opacity: .4; }
+    li.drop-before { box-shadow: inset 0 3px #8cb49a; }
+    li.drop-after { box-shadow: inset 0 -3px #8cb49a; }
+    .reorder-help { color: #7a837b; font-size: 12px; margin: 14px 0 0; line-height: 1.6; }
+    [data-theme=dark] .drag-handle, [data-theme=dark] .reorder-help { color: #b0bdb1; }
     li label { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; line-height: 1.6; }
-    li input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #42694e; cursor: pointer; }
+    li input[type=checkbox] { width: 20px; height: 20px; flex-shrink: 0; accent-color: #42694e; cursor: pointer; }
     li span { overflow-wrap: anywhere; }
-    li.done span { text-decoration: line-through; color: #98a198; }
+    li.done .task-text { text-decoration: line-through; color: #98a198; }
     .delete { background: transparent; color: #919a92; font-size: 12px; padding: 8px; flex-shrink: 0; }
     .delete:hover { background: #fff1ed; color: #a34a38; }
     .empty { text-align: center; padding: 46px 10px; color: #899287; font-size: 14px; line-height: 1.8; }
@@ -64,6 +82,11 @@
     [data-theme=dark] li input { accent-color: #92bd98; }
     [data-theme=dark] .delete:hover { background: #4a302b; color: #ffc0ad; }
     [data-theme=dark] #notice { color: #ffc0ad; }
+    [data-theme=dark] .due-field { color: #b0bdb1; }
+    [data-theme=dark] input[type=date] { color: #e4ece5; background: #18221c; border-color: #4a5c4f; }
+    [data-theme=dark] li.overdue { background: #432c27; border-color: #ec937c; }
+    [data-theme=dark] .overdue-badge { color: #ffc0ad; }
+    @media (max-width: 480px) { li { gap: 6px; flex-wrap: wrap; } .task-content { flex-basis: calc(100% - 34px); } li .star { margin-left: auto; } }
     @media (max-width: 480px) { body { padding: 36px 16px; } .card { padding: 20px; } h1 { font-size: 30px; } .add { padding: 0 16px; } }
   </style>
 </head>
@@ -81,6 +104,7 @@
       <form id="form">
         <input id="task" type="text" aria-label="새 할 일" placeholder="어떤 일을 해야 하나요?" maxlength="300" autocomplete="off" required>
         <button class="add" type="submit">추가</button>
+        <div class="due-field new-due"><label for="due-date">마감일(선택)</label><input id="due-date" type="date" min="0001-01-01" max="9999-12-31"></div>
       </form>
       <div class="toolbar">
         <div class="filters" role="group" aria-label="할 일 필터">
@@ -90,6 +114,7 @@
         </div>
         <span id="count" class="count" aria-live="polite"></span>
       </div>
+      <p id="reorder-help" class="reorder-help">⠿을 끌어 순서를 바꾸세요. 키보드에서는 ⠿에 초점을 두고 ↑ ↓ 키를 누르세요.</p>
       <ul id="list" aria-label="할 일 목록"></ul>
       <div id="empty" class="empty"><span class="empty-icon" aria-hidden="true">✓</span><span id="empty-text"></span></div>
       <div class="bottom"><span id="progress"></span><button id="clear" class="clear">완료한 일 지우기</button></div>
@@ -101,7 +126,9 @@
     const storageKey = 'simple-todo-v1';
     let tasks = [];
     let filter = 'all';
+    let draggedId = null;
     const input = document.getElementById('task');
+    const dueInput = document.getElementById('due-date');
     const list = document.getElementById('list');
     const notice = document.getElementById('notice');
     function warn(message) { notice.textContent = message; notice.hidden = false; }
@@ -119,27 +146,132 @@
       renderTheme();
     });
     renderTheme();
+    function normalizeDueDate(value) {
+      if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+      const [year, month, day] = value.split('-').map(Number);
+      const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+      const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      return year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1] ? value : '';
+    }
+    function localToday(now = new Date()) {
+      return `${String(now.getFullYear()).padStart(4, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+    function updateOverdue(row, task, today = localToday()) {
+      const overdue = !task.done && !!task.dueDate && task.dueDate < today;
+      row.classList.toggle('overdue', overdue);
+      row.querySelector('.overdue-badge').hidden = !overdue;
+    }
+    function refreshOverdue() {
+      const today = localToday();
+      const byId = new Map(tasks.map(task => [task.id, task]));
+      list.querySelectorAll('li').forEach(row => {
+        const task = byId.get(row.dataset.id);
+        if (task) updateOverdue(row, task, today);
+      });
+    }
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
       if (!Array.isArray(saved) || !saved.every(t => t && typeof t.id === 'string' && typeof t.text === 'string' && typeof t.done === 'boolean')) throw new Error('Invalid data');
-      tasks = saved.map(task => ({ ...task, important: task.important === true }));
+      tasks = saved.map(task => ({ ...task, important: task.important === true, dueDate: normalizeDueDate(task.dueDate) }));
     } catch { warn('저장된 목록을 불러오지 못했습니다. 브라우저의 저장 설정을 확인해 주세요.'); }
     function save() {
       try { localStorage.setItem(storageKey, JSON.stringify(tasks)); notice.hidden = true; }
       catch { warn('자동 저장이 되지 않았습니다. 이 창을 닫으면 변경 내용이 사라질 수 있습니다.'); }
     }
+    function visibleTasks() {
+      return tasks.filter(t => filter === 'all' || (filter === 'done' ? t.done : !t.done));
+    }
+    function clearDrag() {
+      draggedId = null;
+      list.querySelectorAll('li').forEach(row => row.classList.remove('dragging', 'drop-before', 'drop-after'));
+    }
+    function moveTask(sourceId, targetId, after) {
+      const visible = visibleTasks();
+      const sourceIndex = visible.findIndex(t => t.id === sourceId);
+      if (sourceId === targetId || sourceIndex < 0 || !visible.some(t => t.id === targetId)) return;
+      const ids = new Set(visible.map(t => t.id));
+      const [moved] = visible.splice(sourceIndex, 1);
+      visible.splice(visible.findIndex(t => t.id === targetId) + (after ? 1 : 0), 0, moved);
+      let index = 0;
+      tasks = tasks.map(task => ids.has(task.id) ? visible[index++] : task);
+      save(); render();
+      const handle = Array.from(list.querySelectorAll('.drag-handle')).find(button => button.dataset.id === sourceId);
+      if (handle) handle.focus();
+    }
     function render() {
+      clearDrag();
       list.replaceChildren();
-      const visible = tasks.filter(t => filter === 'all' || (filter === 'done' ? t.done : !t.done));
+      const visible = visibleTasks();
       visible.forEach(task => {
         const row = document.createElement('li');
+        row.dataset.id = task.id;
         row.classList.toggle('done', task.done);
+        const handle = document.createElement('button');
+        handle.type = 'button'; handle.className = 'drag-handle'; handle.textContent = '⠿';
+        handle.draggable = true; handle.dataset.id = task.id;
+        handle.setAttribute('aria-label', task.text + ' 순서 변경');
+        handle.setAttribute('aria-describedby', 'reorder-help');
+        handle.addEventListener('dragstart', event => {
+          draggedId = task.id;
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', task.id);
+          row.classList.add('dragging');
+        });
+        handle.addEventListener('dragend', clearDrag);
+        handle.addEventListener('keydown', event => {
+          if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+          event.preventDefault();
+          const offset = event.key === 'ArrowDown' ? 1 : -1;
+          const target = visible[visible.findIndex(t => t.id === task.id) + offset];
+          if (target) moveTask(task.id, target.id, offset === 1);
+        });
+        row.addEventListener('dragover', event => {
+          if (!draggedId || draggedId === task.id) return;
+          event.preventDefault(); event.dataTransfer.dropEffect = 'move';
+          list.querySelectorAll('li').forEach(item => item.classList.remove('drop-before', 'drop-after'));
+          const rect = row.getBoundingClientRect();
+          row.classList.add(event.clientY < rect.top + rect.height / 2 ? 'drop-before' : 'drop-after');
+        });
+        row.addEventListener('dragleave', event => {
+          if (!row.contains(event.relatedTarget)) row.classList.remove('drop-before', 'drop-after');
+        });
+        row.addEventListener('drop', event => {
+          if (!draggedId) return;
+          event.preventDefault();
+          const sourceId = draggedId;
+          const rect = row.getBoundingClientRect();
+          const after = event.clientY >= rect.top + rect.height / 2;
+          clearDrag(); moveTask(sourceId, task.id, after);
+        });
         const label = document.createElement('label');
         const check = document.createElement('input');
         check.type = 'checkbox'; check.checked = task.done;
         check.addEventListener('change', () => { task.done = check.checked; save(); render(); });
-        const text = document.createElement('span'); text.textContent = task.text;
+        const text = document.createElement('span'); text.className = 'task-text'; text.textContent = task.text;
         label.append(check, text);
+        const content = document.createElement('div'); content.className = 'task-content';
+        const dueField = document.createElement('div'); dueField.className = 'due-field';
+        const dueLabel = document.createElement('label'); dueLabel.textContent = '마감일';
+        const due = document.createElement('input');
+        due.type = 'date'; due.min = '0001-01-01'; due.max = '9999-12-31'; due.value = task.dueDate;
+        due.setAttribute('aria-label', task.text + ' 마감일');
+        dueLabel.append(due);
+        const clearDate = document.createElement('button');
+        clearDate.type = 'button'; clearDate.className = 'clear-date'; clearDate.textContent = '지우기';
+        clearDate.setAttribute('aria-label', task.text + ' 마감일 지우기'); clearDate.disabled = !task.dueDate;
+        due.addEventListener('change', () => {
+          if (!due.validity.valid) return;
+          task.dueDate = normalizeDueDate(due.value);
+          clearDate.disabled = !task.dueDate;
+          save(); updateOverdue(row, task);
+        });
+        clearDate.addEventListener('click', () => {
+          task.dueDate = ''; due.value = ''; clearDate.disabled = true;
+          save(); updateOverdue(row, task); due.focus();
+        });
+        const badge = document.createElement('span'); badge.className = 'overdue-badge'; badge.textContent = '기한 지남'; badge.hidden = true;
+        dueField.append(dueLabel, clearDate);
+        content.append(label, dueField, badge);
         const star = document.createElement('button');
         star.className = 'star'; star.type = 'button';
         star.setAttribute('aria-label', task.text + ' 중요 표시');
@@ -154,7 +286,8 @@
         remove.className = 'delete'; remove.textContent = '삭제';
         remove.setAttribute('aria-label', task.text + ' 삭제');
         remove.addEventListener('click', () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); });
-        row.append(label, star, remove); list.append(row);
+        row.append(handle, content, star, remove); list.append(row);
+        updateOverdue(row, task);
       });
       const completed = tasks.filter(t => t.done).length;
       document.getElementById('count').textContent = `${tasks.length - completed}개 남음`;
@@ -168,12 +301,23 @@
       event.preventDefault();
       const text = input.value.trim();
       if (!text) { input.value = ''; input.focus(); return; }
-      tasks.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2), text, done: false, important: false });
-      input.value = ''; filter = 'all'; save(); render(); input.focus();
+      tasks.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2), text, done: false, important: false, dueDate: normalizeDueDate(dueInput.value) });
+      input.value = ''; dueInput.value = ''; filter = 'all'; save(); render(); input.focus();
     });
     document.querySelectorAll('.filter').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
     document.getElementById('clear').addEventListener('click', () => { tasks = tasks.filter(t => !t.done); save(); render(); });
     render();
+    let midnightTimer;
+    function scheduleDateRefresh() {
+      clearTimeout(midnightTimer);
+      refreshOverdue();
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      midnightTimer = setTimeout(scheduleDateRefresh, midnight - now + 100);
+    }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleDateRefresh(); });
+    window.addEventListener('focus', scheduleDateRefresh);
+    scheduleDateRefresh();
   </script>
 </body>
 </html>
